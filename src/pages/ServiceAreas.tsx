@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,7 +5,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { useApi } from '@/hooks/useApi';
 import { toast } from '@/hooks/use-toast';
 
@@ -25,17 +23,14 @@ const ServiceAreas = () => {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedServiceArea, setSelectedServiceArea] = useState<ServiceArea | null>(null);
   const [pincode, setPincode] = useState('');
-  const [availableAreas, setAvailableAreas] = useState<string[]>([]);
-  const [selectedAreas, setSelectedAreas] = useState<string[]>([]);
-  const [fetchingAreas, setFetchingAreas] = useState(false);
+  const [areasInput, setAreasInput] = useState('');
   const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   const { makeRequest } = useApi();
 
   useEffect(() => {
     fetchServiceAreas();
   }, []);
-
-  
 
   const fetchServiceAreas = async () => {
     try {
@@ -52,17 +47,26 @@ const ServiceAreas = () => {
     }
   };
 
- 
-
   const saveServiceArea = async () => {
-    if (!pincode.trim() || pincode.length !== 6) {
+    if (!pincode.trim() || pincode.length !== 5) {
       toast({
         title: "Error",
-        description: "Please enter a valid 6-digit pincode",
+        description: "Please enter a valid 5-digit pincode",
         variant: "destructive",
       });
       return;
     }
+
+    if (!areasInput.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter at least one area",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const areasArray = areasInput.split(",").map((a) => a.trim()).filter((a) => a);
 
     setSaving(true);
     try {
@@ -70,6 +74,7 @@ const ServiceAreas = () => {
         method: 'POST',
         body: JSON.stringify({
           pincode: pincode.trim(),
+          areas: areasArray,
         }),
       });
 
@@ -80,6 +85,7 @@ const ServiceAreas = () => {
 
       setIsAddModalOpen(false);
       setPincode('');
+      setAreasInput('');
       fetchServiceAreas();
     } catch (error) {
       toast({
@@ -89,6 +95,32 @@ const ServiceAreas = () => {
       });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const deleteServiceArea = async (id: number) => {
+    if (!confirm("Are you sure you want to delete this service area?")) return;
+
+    setDeletingId(id);
+    try {
+      await makeRequest(`/service-area/${id}`, {
+        method: 'DELETE',
+      });
+
+      toast({
+        title: "Deleted",
+        description: "Service area deleted successfully",
+      });
+
+      setServiceAreas(serviceAreas.filter((area) => area.id !== id));
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete service area",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -105,8 +137,6 @@ const ServiceAreas = () => {
       });
     }
   };
-
- 
 
   if (loading) {
     return (
@@ -131,7 +161,7 @@ const ServiceAreas = () => {
             <DialogHeader>
               <DialogTitle>Add Service Area</DialogTitle>
               <DialogDescription>
-              Enter a 6-digit pincode to add a new service area
+                Enter a 5-digit pincode and areas to add a new service area
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
@@ -141,17 +171,26 @@ const ServiceAreas = () => {
                   id="pincode"
                   value={pincode}
                   onChange={(e) => setPincode(e.target.value)}
-                  placeholder="Enter 6-digit pincode"
-                  maxLength={6}
-                
+                  placeholder="Enter 5-digit pincode"
+                  maxLength={5}
                   type="number"
-                  />
-                </div>
-  
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <Button 
-                    onClick={saveServiceArea} 
-                    disabled={saving || pincode.length !== 6}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="areas">Areas</Label>
+                <Input
+                  id="areas"
+                  value={areasInput}
+                  onChange={(e) => setAreasInput(e.target.value)}
+                  placeholder="Enter areas separated by commas (e.g. Andheri, Bandra, Juhu)"
+                />
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button 
+                  onClick={saveServiceArea} 
+                  disabled={saving || pincode.length !== 5}
                 >
                   {saving ? "Saving..." : "Save"}
                 </Button>
@@ -188,7 +227,7 @@ const ServiceAreas = () => {
                     <TableHead className="min-w-[100px]">Pincode</TableHead>
                     <TableHead className="min-w-[120px]">Areas Count</TableHead>
                     <TableHead className="min-w-[120px] hidden sm:table-cell">Created At</TableHead>
-                    <TableHead className="min-w-[100px]">Actions</TableHead>
+                    <TableHead className="min-w-[150px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -199,7 +238,7 @@ const ServiceAreas = () => {
                       <TableCell className="hidden sm:table-cell">
                         {new Date(serviceArea.createdAt).toLocaleDateString()}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="flex gap-2">
                         <Button
                           variant="outline"
                           size="sm"
@@ -207,6 +246,15 @@ const ServiceAreas = () => {
                           className="text-xs px-2 py-1"
                         >
                           View
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => deleteServiceArea(serviceArea.id)}
+                          className="text-xs px-2 py-1"
+                          disabled={deletingId === serviceArea.id}
+                        >
+                          {deletingId === serviceArea.id ? "Deleting..." : "Delete"}
                         </Button>
                       </TableCell>
                     </TableRow>
