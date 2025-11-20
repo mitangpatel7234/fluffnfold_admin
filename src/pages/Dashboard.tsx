@@ -61,6 +61,11 @@ const Dashboard: React.FC = () => {
       maximumFractionDigits: 0 
     }).format(value);
 
+  const toNumber = (value: unknown, fallback = 0) => {
+    const num = typeof value === 'number' ? value : Number(value);
+    return Number.isFinite(num) ? num : fallback;
+  };
+
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
@@ -81,6 +86,16 @@ const Dashboard: React.FC = () => {
 
   if (loading) return <DashboardSkeleton />;
   if (!data) return <p className="mt-10 text-center">No analytics data available</p>;
+
+  const summary = {
+    totalRevenue: toNumber(data.summary?.totalRevenue),
+    averageOrderValue: toNumber(data.summary?.averageOrderValue),
+    totalBookings: toNumber(data.summary?.totalBookings),
+    repeatCustomerRate: toNumber(data.summary?.repeatCustomerRate),
+    avgDeliveryHours: toNumber(data.summary?.avgDeliveryHours),
+    onTimeDeliveryRate: toNumber(data.summary?.onTimeDeliveryRate),
+    totalCustomers: toNumber(data.summary?.totalCustomers),
+  };
 
   return (
     <div className="p-4 md:p-6 space-y-6 bg-gray-50 min-h-screen">
@@ -156,36 +171,36 @@ const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <SummaryCard 
           title="Total Revenue" 
-          value={data.summary.totalRevenue} 
+          value={summary.totalRevenue} 
           icon={<DollarSign className="h-5 w-5" />}
-          formatted={currencyFormatter(data.summary.totalRevenue)}
+          formatted={currencyFormatter(summary.totalRevenue)}
           color="bg-gradient-to-r from-indigo-500 to-purple-600"
           trend={`+12.5% from last period`}
         />
         
         <SummaryCard 
           title="Avg Order Value" 
-          value={data.summary.averageOrderValue} 
+          value={summary.averageOrderValue} 
           icon={<ShoppingBag className="h-5 w-5" />}
-          formatted={currencyFormatter(data.summary.averageOrderValue)}
+          formatted={currencyFormatter(summary.averageOrderValue)}
           color="bg-gradient-to-r from-sky-500 to-cyan-600"
           trend={`+3.2% from last period`}
         />
         
         <SummaryCard 
           title="Total Bookings" 
-          value={data.summary.totalBookings} 
+          value={summary.totalBookings} 
           icon={<Package className="h-5 w-5" />}
-          formatted={data.summary.totalBookings.toString()}
+          formatted={summary.totalBookings.toString()}
           color="bg-gradient-to-r from-amber-500 to-orange-500"
           trend={`+8.7% from last period`}
         />
         
         <SummaryCard 
           title="Repeat Customers" 
-          value={data.summary.repeatCustomerRate} 
+          value={summary.repeatCustomerRate} 
           icon={<Repeat className="h-5 w-5" />}
-          formatted={`${data.summary.repeatCustomerRate.toFixed(1)}%`}
+          formatted={`${summary.repeatCustomerRate.toFixed(1)}%`}
           color="bg-gradient-to-r from-emerald-500 to-green-500"
           trend={`+2.3% from last period`}
         />
@@ -194,18 +209,18 @@ const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <SummaryCard 
           title="Avg Delivery Time" 
-          value={data.summary.avgDeliveryHours} 
+          value={summary.avgDeliveryHours} 
           icon={<Clock className="h-5 w-5" />}
-          formatted={`${data.summary.avgDeliveryHours.toFixed(1)} hours`}
+          formatted={`${summary.avgDeliveryHours.toFixed(1)} hours`}
           color="bg-gradient-to-r from-blue-500 to-indigo-500"
           trend={`-1.5 hours from last period`}
         />
         
         <SummaryCard 
           title="On-Time Delivery" 
-          value={data.summary.onTimeDeliveryRate} 
+          value={summary.onTimeDeliveryRate} 
           icon={<Clock className="h-5 w-5" />}
-          formatted={`${data.summary.onTimeDeliveryRate.toFixed(1)}%`}
+          formatted={`${summary.onTimeDeliveryRate.toFixed(1)}%`}
           color="bg-gradient-to-r from-violet-500 to-purple-500"
           trend={`+4.2% from last period`}
         />
@@ -373,16 +388,16 @@ const Dashboard: React.FC = () => {
               <div className="bg-indigo-50 p-4 rounded-lg">
                 <h3 className="text-lg font-semibold text-indigo-800">Total Customers</h3>
                 <p className="text-3xl font-bold text-indigo-600">
-                  {data.summary.totalCustomers}
+                  {summary.totalCustomers}
                 </p>
               </div>
               <div className="bg-emerald-50 p-4 rounded-lg">
                 <h3 className="text-lg font-semibold text-emerald-800">Repeat Customers</h3>
                 <p className="text-3xl font-bold text-emerald-600">
-                  {Math.round(data.summary.totalCustomers * (data.summary.repeatCustomerRate / 100))}
+                  {Math.round(summary.totalCustomers * (summary.repeatCustomerRate / 100))}
                 </p>
                 <p className="text-sm text-emerald-700">
-                  ({data.summary.repeatCustomerRate.toFixed(1)}%)
+                  ({summary.repeatCustomerRate.toFixed(1)}%)
                 </p>
               </div>
             </div>
@@ -424,7 +439,7 @@ const Dashboard: React.FC = () => {
             Delivery Performance
           </CardTitle>
           <CardDescription>
-            Average delivery time: {data.summary.avgDeliveryHours.toFixed(1)} hours
+            Average delivery time: {summary.avgDeliveryHours.toFixed(1)} hours
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -432,12 +447,12 @@ const Dashboard: React.FC = () => {
             <div className="flex-1">
               <div className="flex justify-between mb-2">
                 <span className="text-sm font-medium text-gray-700">On-Time Delivery</span>
-                <span className="text-sm font-semibold">{data.summary.onTimeDeliveryRate.toFixed(1)}%</span>
+                <span className="text-sm font-semibold">{summary.onTimeDeliveryRate.toFixed(1)}%</span>
               </div>
               <div className="h-3 w-full bg-gray-200 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-green-500" 
-                  style={{ width: `${data.summary.onTimeDeliveryRate}%` }}
+                  style={{ width: `${summary.onTimeDeliveryRate}%` }}
                 />
               </div>
             </div>
@@ -445,12 +460,12 @@ const Dashboard: React.FC = () => {
             <div className="flex-1">
               <div className="flex justify-between mb-2">
                 <span className="text-sm font-medium text-gray-700">Avg Delivery Time</span>
-                <span className="text-sm font-semibold">{data.summary.avgDeliveryHours.toFixed(1)} hours</span>
+                <span className="text-sm font-semibold">{summary.avgDeliveryHours.toFixed(1)} hours</span>
               </div>
               <div className="h-3 w-full bg-gray-200 rounded-full overflow-hidden">
                 <div 
                   className="h-full bg-blue-500" 
-                  style={{ width: `${Math.min(100, data.summary.avgDeliveryHours / 72 * 100)}%` }}
+                  style={{ width: `${Math.min(100, summary.avgDeliveryHours / 72 * 100)}%` }}
                 />
               </div>
             </div>
