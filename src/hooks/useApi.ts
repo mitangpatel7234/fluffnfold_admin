@@ -2,7 +2,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 
-const API_BASE_URL = 'http://localhost:3005/v1';
+const API_BASE_URL = 'https://api.cleandudsdash.com/v1';
 
 export const useApi = () => {
   const { token, logout } = useAuth();

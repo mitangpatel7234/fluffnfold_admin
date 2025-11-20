@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-const API_BASE_URL = 'http://localhost:3005/v1';
+const API_BASE_URL = 'https://api.cleandudsdash.com/v1';
 
 interface User {
   id: number;
